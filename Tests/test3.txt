@@ -1,0 +1,9 @@
+int  m(int n, float x)
+{
+	float k ;
+    k= 1;
+    for ( i = 0 ; i< n ;i= i +2 )
+    {
+        k = i * x + 5 * i - (k - x) ;
+    }
+}

@@ -1,0 +1,9 @@
+int f (float x)
+{
+	float y ;
+	x = y + 5 * 5;
+	for (i = 1 ; i<10;i=i+1 )
+	{
+		x=x+5;
+	}
+	}

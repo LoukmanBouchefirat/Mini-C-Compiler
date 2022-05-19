@@ -1,0 +1,659 @@
+options {
+  LOOKAHEAD = 1;
+
+  STATIC = false ;
+  COMMON_TOKEN_ACTION = false ;
+}
+
+PARSER_BEGIN(MiniC)
+import java.io.*;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+import java.util.ArrayList;
+
+
+public class MiniC {
+
+  private PrintWriter outFile;
+  private CodeGen cg ;
+  public static void main(String args[]) throws IOException
+  {
+   // System.out.println("Mini-C compiler wirtten by Korbaa Hamza , Bouchfirat Loukmane ");
+
+    // build input and output file name
+    String inFileName = args[0] +".txt";
+    String outFileName =  args[0] +"_code" + ".txt";
+
+    //Construct file objets 
+    FileInputStream inFile = new FileInputStream(inFileName);
+    PrintWriter outFile = new PrintWriter(outFileName);
+    
+    // identify compiler / author
+    outFile.println("");
+    outFile.println("Mini-C compiler wirtten by Korbaa Hamza , Bouchfirat Loukmane ");
+    outFile.printf("The compiler created a file %s containing the assembly code \n",outFileName);
+    
+
+    //construct objects that make up compiler 
+    MiniC parser = new MiniC(inFile);
+    CodeGen cg = new CodeGen(outFile);
+
+    // initialize parser's instance variables
+    parser.outFile = outFile;
+    parser.cg = cg;
+
+
+    try 
+    {
+      outFile.println("");    
+      
+      parser.Start();
+
+      outFile.close();
+
+      try
+      {
+        // Le fichier d'entrée
+        File file = new File(outFileName);    
+        // Créer l'objet File Reader
+        FileReader fr = new FileReader(file);  
+        // Créer l'objet BufferedReader        
+        BufferedReader br = new BufferedReader(fr);  
+        StringBuffer sb = new StringBuffer();    
+        String line;
+        while((line = br.readLine()) != null)
+        {
+          // ajoute la ligne au buffer
+          sb.append(line);      
+          sb.append("\n");     
+        }
+        fr.close();    
+        //System.out.println("Contenu du fichier: ");
+        System.out.println(sb.toString());  
+      }
+      catch(IOException e)
+      {
+        e.printStackTrace();
+      }
+
+    }catch(ParseException e)
+    {
+      System.err.println(e.getMessage());
+      outFile.println(e.getMessage());
+      outFile.close();
+      System.exit(1);
+    }
+
+
+  }
+  public void makeComment(Token t)
+  {
+    outFile.printf(
+      "; " , t.kind , t.beginLine , t.beginColumn , t.endLine , 
+      t.endColumn, t.image ) ;
+  
+  }
+ 
+
+}
+ //===========================================================
+ class CodeGen
+ {
+    public class Quad
+    {
+      public String code_op ;
+      public String source1 ;
+      public String source2;
+      public String result;
+      public Quad (String op,String s1,String s2,String result)
+      {
+        code_op = op;
+        source1 = s1 ;
+        source2 = s2;
+        this.result = result;
+      }
+
+      public void modify (int Case , String x)
+      {
+        switch(Case)
+        {
+          case 1 :
+            code_op = x ;
+            break;
+          case 2 :
+            source1 = x;
+            break;
+          case 3 :
+            source2 = x;
+            break;
+          case 4 :
+            result = x;
+            break ;
+        }
+      }
+
+    }
+/*  uad tab_quad[1000];
+    int taille_quad = 0;   /* TRES IMPORTANT : taille_quad pointe tjr sur le quad vide 
+    int temporaryGenerated=0;
+    char temp[10];
+    char cmp[10];*/
+
+    private PrintWriter outFile;
+    private ArrayList<Quad> tab_quad ;
+    private int taille_quad ;
+    private int temporaryGenerated ;
+
+    public CodeGen (PrintWriter outFile){
+      this.outFile = outFile;
+      tab_quad = new ArrayList<Quad>();
+      taille_quad = 0;
+      temporaryGenerated =0 ;
+    }
+
+    public void genereQuad(String op , String s1 , String s2 ,String result)
+    {
+      Quad q = new Quad(op,s1,s2,result) ;
+      tab_quad.add(q);
+     // writrLine(q);
+      taille_quad ++;
+    }
+
+
+    public int genereQuadreturn(String op , String s1 , String s2 , String result)
+    {
+      Quad q = new Quad(op,s1,s2,result) ;
+      tab_quad.add(q);
+      taille_quad ++;
+      return tab_quad.size();
+    }
+
+    public void modifyQuad(int adr, int Case , String x)
+    {
+      Quad q = tab_quad.get(adr);
+      q.modify(Case,x);
+      tab_quad.set(adr,q);      
+    }
+
+    public String newTemp()
+    {
+      String c = "tem" + Integer.toString(temporaryGenerated);
+      temporaryGenerated ++ ;
+      return c;
+    }
+
+    public int getCourant()
+    {
+      return taille_quad;
+    }
+
+    void writrLine(Quad q, int n)
+    {
+      String num , op , s1 ,s2 ,res;
+      num = writeCase(Integer.toString(n));
+      op = writeCase(q.code_op);
+      s1 = writeCase(q.source1);
+      s2 = writeCase(q.source2);
+      res= writeCase(q.result);
+
+      outFile.printf("  %s | %s | %s | %s | %s  \n",num,op,s1,s2,res);
+
+    }
+
+    String  writeCase(String s)
+    {
+      for (int i = s.length() ; i<10 ; i++)
+      {
+        s = s+" " ;
+      }
+      return s;
+    }
+
+    public void endCode()
+    {
+      Quad q;
+      int size = tab_quad.size();
+
+      outFile.println("========================== ASSEMBLY CODE ========================= ");
+      outFile.println("");
+      outFile.printf("  NUM        | OP         | S1         | S2         | RES          \n");   
+      outFile.println("-------------------------------------------------------------------");  
+      
+      for (int i = 0 ; i< size ; i++)
+      {
+        q = tab_quad.get(i);
+        writrLine(q,i);
+      } 
+    }
+
+
+
+
+}
+PARSER_END(MiniC)
+
+TOKEN_MGR_DECLS:
+{
+  void CommonTokenAction(Token t)
+  {
+   // parser.makeComment(t);
+  }
+}
+SKIP : {  /* WHITE SPACE */   /* COMMENTS */
+ " "
+|  "\t"
+|  "\n"
+|  "\r"
+|  <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+|  <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+
+TOKEN : {   /*     C words     */
+	<FLOAT: "float"> |
+  <INT: "int">     |
+  <FOR: "for">     |
+	<WHILE: "while"> |
+	<IF: "if">       |
+	<ELSE: "else">   
+
+}
+
+TOKEN : {   /*    Compare     */
+  <EG: "==">       |
+  <NE: "!=">       |
+  <IN: "<">        |
+  <IE: "<=">       |
+  <SU: ">">        |
+  <SE: ">=">       
+
+}
+
+TOKEN : {     /*   Separators    */
+  < LPAREN: "(" >  |
+  < RPAREN: ")" >  |
+  < LBRACE: "{" >  |
+  < RBRACE: "}" >  |
+  < COMMA: "," >   |
+  < SEMICOLON: ";" >   
+
+}
+
+TOKEN : {     /*      Operators     */
+  < PLUS: "+" >    |
+  < MINUS: "-" >   |
+  < MULT: "*" >    |
+  < DIV: "/" >     |
+  < ASSIGN: "=" >
+
+}
+
+TOKEN : {   /*    IDENTIFIERS   */
+ <IDENTIFIER: <LETTER> (<LETTER> | <DIGIT>)*>
+|  <#LETTER: ["A"-"Z","_","a"-"z"]>
+|  <#DIGIT: ["0"-"9"]> 
+}
+
+TOKEN : {   /*    NUMBER      */
+ <NUMBER:(["0"-"9"])+ ( "." (["0"-"9"])* )?>
+
+}
+
+/*************************************
+ * The MiniC Grammar Starts Here *
+ * grammaire_mini-c.c 
+ *************************************/
+
+ void Start () :{}
+{
+  Function()
+  {cg.endCode();}
+  <EOF>
+
+}
+
+void Function () :{Token t;}
+{
+  Type()   t = <IDENTIFIER>   "("   ArgList()  ")"   CompoundStmt()
+  {cg.genereQuad("halt","","",t.image) ; }
+}
+
+void ArgList () :{}
+{
+  Type()   <IDENTIFIER>   NewArgList()
+}
+
+void NewArgList () :{}
+{
+  ( ","   Arg()   NewArgList() )?
+}
+
+void Arg () :{}
+{
+  Type()  <IDENTIFIER>
+}
+
+void Declaration () :{}
+{
+  Type()  IdentList()  ";"
+}
+
+void Type () :{}
+{
+  "int"  |  "float"
+}
+
+void IdentList () :{}
+{
+  <IDENTIFIER>    
+  (
+    ","    IdentList()
+  )?
+}
+
+void Stmt () :
+{ 
+  String f;
+}
+{ 
+  ForStmt()
+  | WhileStmt()
+  | ( f= Expr()   ";" )
+  | IfStmt()
+  | CompoundStmt()
+  | Declaration()
+  | ";"
+}
+
+void ForStmt () :
+{
+  int adr1,adr2, adr3;
+  String f;
+
+}
+{
+  "for"   "(" f=  Expr() 
+  { adr1= cg.getCourant() ; adr2 = adr1;adr3= adr1; }
+
+  ";"   ( f= Expr() 
+          { 
+            adr2 = cg.getCourant();
+            cg.genereQuad("JZ","","","");
+            adr3 = cg.getCourant();
+            cg.genereQuad("JUMP","","","") ;
+          }
+        )? 
+
+  ";" ( f=Expr() 
+        {
+          cg.genereQuad("JUMP","","",Integer.toString(adr1));
+          cg.modifyQuad(adr3 , 4 ,Integer.toString(cg.getCourant()) );
+        } 
+      )?
+ 
+  ")" Stmt() 
+  {
+    cg.genereQuad("JUMP","","",Integer.toString(adr2 + 2));
+    cg.modifyQuad(adr2 , 4 , Integer.toString(cg.getCourant()));
+
+  }
+}
+
+void WhileStmt () :
+{
+  int adr1;
+  int adr2;
+  String f;
+}
+{
+  "while" 
+  { adr1 = cg.getCourant();  }
+  
+  "("   f=Expr()  ")"
+  {
+    adr2 = cg.getCourant();
+    cg.genereQuad("JZ","","","");
+  }
+  
+  Stmt()
+  {
+    cg.genereQuad("JUMP","","",Integer.toString(adr1));
+    cg.modifyQuad( adr2 , 4 , Integer.toString(cg.getCourant()) );
+  }	
+}
+
+void IfStmt () :
+{
+  int adr1 ,adr2 ;
+  String f;
+}
+{
+  "if"   "("    f = Expr()  ")" 
+  {
+    adr1 = cg.getCourant();
+    cg.genereQuad("JZ","","","");
+  }
+
+  "{"   Stmt()   "}"  
+  { cg.modifyQuad( adr1 , 4, Integer.toString(cg.getCourant()));}
+
+  (
+    {
+      adr2 = cg.getCourant();
+      cg.genereQuad("JUMP","","","");
+      cg.modifyQuad(adr1 , 4 , Integer.toString(cg.getCourant()));  
+    }
+    "else"   Stmt()
+    {
+      cg.modifyQuad(adr2,4,Integer.toString(cg.getCourant()));
+    } 
+  )?
+}
+
+void CompoundStmt () :{}
+{
+  "{"  StmtList()  "}" 
+}
+
+void StmtList () :{}
+{
+  ( 
+    Stmt()   StmtList()
+  )?
+}
+
+String Expr () :
+{
+  Token t ;
+  String f1 ,f2 ,f3,f4 ,s,inst;
+}
+{
+  (
+    t = <IDENTIFIER> {f1 = t.image ;}   
+    (
+      "="   f2=Expr() {cg.genereQuad("MOV",f2,"",f1);f3 = f2 ;}
+      |  f2= NewTerm(f1)  f3 = NewMag(f2)  
+      (
+        inst = Compare()  f4= Mag()
+        {
+          s = cg.newTemp();
+          cg.genereQuad("cmp",f3,f4,"");
+          cg.genereQuad(inst,"","",Integer.toString(cg.getCourant()+2));
+          cg.genereQuad("MOV","0","",s);
+          cg.genereQuad("JUMP","","",Integer.toString(cg.getCourant()+2));
+          cg.genereQuad("MOV","1","",s);
+        }
+      )*
+    )					
+    
+    |(
+      "(" f1 =  Expr()   ")"
+      | "-"  f2 = Factor() /*  moins_unaire */{ f1 = cg.newTemp(); cg.genereQuad( "NEG" , f2 , "" , f1 );} 
+      | "+"  f1 = Factor() /*  plus_unaire */
+      |   t = <NUMBER> {f1 = t.image;}
+    )    f2= NewTerm(f1)   f3 = NewMag(f2)   
+    (
+      inst = Compare()  f4= Mag() 
+      {
+      s = cg.newTemp();
+      cg.genereQuad("cmp",f3,f4,"");
+      cg.genereQuad(inst,"","",Integer.toString(cg.getCourant()+2));
+      cg.genereQuad("MOV","0","",s);
+      cg.genereQuad("JUMP","","",Integer.toString(cg.getCourant()+2));
+      cg.genereQuad("MOV","1","",s);
+
+      }
+    )*
+  )
+  {return f3 ;}
+
+}
+
+
+
+String Compare () :
+{
+  Token t;
+  String inst;
+}
+{
+  (t = "=="
+    | t= <NE>
+    | t= <IN>
+    | t= <IE>
+    | t= <SU>
+   | t= <SE>
+  )
+  {
+    if (t.kind==EG)  inst = "JE" ; 
+    else if (t.kind ==NE) inst = "JNE" ;
+    else if (t.kind==IN)  inst = "JL" ; 
+    else if (t.kind ==IE) inst = "JLE" ;
+    else if (t.kind == SU) inst = "JG" ; 
+    else if (t.kind == SE) inst = "JGE";
+    else inst="";
+    return inst ;
+  }
+}
+
+String Mag () :
+{
+  Token s;
+  String f1 , f2 , t  ;  
+}
+{
+  f1 = Term()  
+  (
+    (
+      s = "+"  f2 = Term() 
+      | s = "-"  f2 = Term() { t = cg.newTemp(); cg.genereQuad( "NEG" , f2 , "" , t ); f2 = t ;}
+    )
+    {
+      t = cg.newTemp();
+
+      cg.genereQuad( "ADD" , f1 , f2 , t );
+      
+      f1 = t ;
+    } 
+  )*
+  {return f1 ; }
+}
+
+String NewMag (String f) :
+{
+  Token s;
+  String f1 , f2 , t  ;  
+}
+{ 
+  {f1 = f;}
+  (
+    (
+      s = "+"  f2 = Term() 
+      | s = "-"  f2 = Term() { t = cg.newTemp(); cg.genereQuad( "NEG" , f2 , "" , t ); f2 = t ;}
+    )
+    {
+      t = cg.newTemp();
+
+      cg.genereQuad( "ADD" , f1 , f2 , t );
+      
+      f1 = t ;
+    } 
+  )*
+  {return f1 ; }
+}
+
+String Term () :
+{
+  Token s;
+  String f1 , f2 , t , inst;
+}
+{
+  f1 = Factor()  
+  ( 
+    ( s= "*"  f2= Factor() | s= "/" f2 = Factor() )
+    {
+      t = cg.newTemp();
+
+     if (s.kind == MULT) inst = "MUL" ;
+        else inst = "DIV" ;
+    
+      cg.genereQuad( inst , f1 , f2 , t );
+      f1 = t ;
+    } 
+  )*
+  {return f1 ; }
+}
+
+String NewTerm (String f) : 
+{
+  Token s;
+  String f1 , f2 , t ,inst ;
+}
+{
+  {f1 = f ;} 
+  ( 
+    ( s= "*"  f2= Factor() | s= "/" f2 = Factor() )
+    {
+      t = cg.newTemp();
+
+     if (s.kind == MULT) inst = "MUL" ;
+        else inst = "DIV" ;
+    
+      cg.genereQuad( inst , f1 , f2 , t );
+      f1 = t ;
+    } 
+  )*
+  {return f1 ; }
+}
+
+
+String Factor () :
+{
+  Token s;
+  String f,t,inst;
+}
+{
+  "("  f = Expr()  ")" {return f ;}
+  | f = Primary() {return f ;}
+  | ( 
+      s = "-"   f = Factor() {t = cg.newTemp(); cg.genereQuad( "NEG" , f , "" , t ); f = t ;}
+      | s = "+"   f = Factor() 
+    )  
+  {
+    return f ;
+  }
+  
+}
+
+String Primary() throws NumberFormatException :
+{
+  Token t ;
+}
+{
+  ( t = <NUMBER> | t = <IDENTIFIER> ) 
+  { return t.image ; }
+}
+
+
+

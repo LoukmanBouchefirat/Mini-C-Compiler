@@ -1,0 +1,26 @@
+
+Mini-C compiler wirtten by Korbaa Hamza , Bouchfirat Loukmane 
+The compiler created a file ../Tests/test1_code.txt containing the assembly code 
+
+========================== ASSEMBLY CODE ========================= 
+
+  NUM        | OP         | S1         | S2         | RES          
+-------------------------------------------------------------------
+  0          | MUL        | 5          | 5          | tem0        
+  1          | ADD        | y          | tem0       | tem1        
+  2          | MOV        | tem1       |            | x           
+  3          | MOV        | 1          |            | i           
+  4          | cmp        | i          | 10         |             
+  5          | JL         |            |            | 7           
+  6          | MOV        | 0          |            | tem2        
+  7          | JUMP       |            |            | 9           
+  8          | MOV        | 1          |            | tem2        
+  9          | JZ         |            |            | 17          
+  10         | JUMP       |            |            | 14          
+  11         | ADD        | i          | 1          | tem3        
+  12         | MOV        | tem3       |            | i           
+  13         | JUMP       |            |            | 4           
+  14         | ADD        | x          | 5          | tem4        
+  15         | MOV        | tem4       |            | x           
+  16         | JUMP       |            |            | 11          
+  17         | halt       |            |            | f           

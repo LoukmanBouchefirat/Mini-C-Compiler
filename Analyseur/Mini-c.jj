@@ -1,0 +1,255 @@
+options {
+  LOOKAHEAD = 1;
+}
+
+PARSER_BEGIN(MiniC)
+public class MiniC {
+
+  public static void main(String args[]) throws ParseException {
+    MiniC parser = new MiniC(System.in);
+    parser.Start();
+    System.out.println("it 's ok");
+  }
+
+}
+ 
+PARSER_END(MiniC)
+
+SKIP : {  /* WHITE SPACE */   /* COMMENTS */
+ " "
+|  "\t"
+|  "\n"
+|  "\r"
+|  <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+|  <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+
+TOKEN : {   /*     C words     */
+	<FLOAT: "float"> |
+  <INT: "int">     |
+  <FOR: "for">     |
+	<WHILE: "while"> |
+	<IF: "if">       |
+	<ELSE: "else">   
+
+}
+
+TOKEN : {   /*    Compare     */
+  <EG: "==">       |
+  <NE: "!=">       |
+  <IN: "<">        |
+  <IE: "<=">       |
+  <SU: ">">        |
+  <SE: ">=">       
+
+}
+
+TOKEN : {     /*   Separators    */
+  < LPAREN: "(" >  |
+  < RPAREN: ")" >  |
+  < LBRACE: "{" >  |
+  < RBRACE: "}" >  |
+  < COMMA: "," >   |
+  < SEMICOLON: ";" >   
+
+}
+
+TOKEN : {     /*      Operators     */
+  < PLUS: "+" >    |
+  < MINUS: "-" >   |
+  < MULT: "*" >    |
+  < DIV: "/" >     |
+  < ASSIGN: "=" >
+
+}
+
+TOKEN : {   /*    IDENTIFIERS   */
+ <IDENTIFIER: <LETTER> (<LETTER> | <DIGIT>)*>
+|  <#LETTER: ["A"-"Z","_","a"-"z"]>
+|  <#DIGIT: ["0"-"9"]> 
+}
+
+TOKEN : {   /*    NUMBER      */
+ <NUMBER:(["0"-"9"])+ ( "." (["0"-"9"])* )?>
+
+}
+
+/*************************************
+ * The MiniC Grammar Starts Here *
+ * grammaire_mini-c.c 
+ *************************************/
+
+ void Start () :{}
+{
+  Function()
+  <EOF>
+
+}
+
+void Function () :{}
+{
+  Type()   <IDENTIFIER>   "("   ArgList()  ")"   CompoundStmt()
+}
+
+void ArgList () :{}
+{
+  Type()   <IDENTIFIER>   NewArgList()
+}
+
+void NewArgList () :{}
+{
+  ( ","   Arg()   NewArgList() )?
+}
+
+void Arg () :{}
+{
+  Type()  <IDENTIFIER>
+}
+
+void Declaration () :{}
+{
+  Type()  IdentList()  ";"
+}
+
+void Type () :{}
+{
+  "int"  |  "float"
+}
+
+void IdentList () :{}
+{
+  <IDENTIFIER>    
+  (
+    ","    IdentList()
+  )?
+}
+
+void Stmt () :{}
+{ 
+  ForStmt()
+  | WhileStmt()
+  | ( Expr()   ";" )
+  | IfStmt()
+  | CompoundStmt()
+  | Declaration()
+  | ";"
+}
+
+void ForStmt () :{}
+{
+  "for"   "("  Expr()  ";"   ForStmtEnd()
+}
+
+void ForStmtEnd () :{}
+{
+  ( Expr()  ";"   ForStmtEnd1() ) 
+   |
+  ( ";"    ForStmtEnd1() )
+}
+
+void ForStmtEnd1 () :{}
+{
+  ( Expr()  ")"   Stmt() ) 
+   |
+  ")" Stmt()
+}
+
+void WhileStmt () :{}
+{
+  "while"  "("   Expr()  ")"  Stmt()	
+}
+
+void IfStmt () :{}
+{
+  "if"   "("   Expr()  ")"  "{"   Stmt()   "}"  
+  (
+    "else"   Stmt() 
+  )?
+}
+
+void CompoundStmt () :{}
+{
+  "{"  StmtList()  "}" 
+}
+
+void StmtList () :{}
+{
+  ( 
+    Stmt()   StmtList()
+  )?
+}
+
+void Expr () :{}
+{
+  <IDENTIFIER>    ExprFol()					
+	| "("  Expr()   ")"  NewTerm()   NewMag()  NewRvalue()
+	| "-"  Factor()  NewTerm()   NewMag()  NewRvalue()
+	| "+"  Factor()  NewTerm()   NewMag()  NewRvalue()
+	|   <NUMBER>     NewTerm()   NewMag()  NewRvalue()
+}
+
+void ExprFol () :{}
+{
+  "="  Expr() 
+   |  
+  NewTerm()  NewMag()  NewRvalue()
+}
+
+void NewRvalue () :{}
+{
+  (
+    Compare()  Mag()  NewRvalue() 
+  )?
+}
+
+void Compare () :{}
+{
+  <EG>
+  | <NE>
+  | <IN>
+  | <IE>
+  | <SU>
+  | <SE>
+
+}
+
+void Mag () :{}
+{
+  Term()  NewMag()
+}
+
+void NewMag () :{}
+{
+  (
+    "+"  Term()  NewMag()  
+     |
+    "-"  Term()  NewMag()
+  )?
+}
+
+void Term () :{}
+{
+  Factor()  NewTerm()
+}
+
+void NewTerm () :{}
+{
+  (
+    "*"   Factor()   NewTerm() 
+     |
+    "/"   Factor()   NewTerm()
+  )?
+}
+
+void Factor () :{}
+{
+  "("  Expr()  ")" 
+  | "-"   Factor() 
+  | "+"   Factor() 
+  | <IDENTIFIER> 
+  | <NUMBER>
+}
+
+
+
+
